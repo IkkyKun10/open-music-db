@@ -1,0 +1,21 @@
+{
+  "name": "open-music-db",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start-dev": "node ./src/server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@hapi/hapi": "^21.3.2",
+    "auto-bind": "^4.0.0",
+    "dotenv": "^16.3.1",
+    "joi": "^17.9.2",
+    "pg": "^8.11.0",
+    "start-dev": "^1.0.0"
+  }
+}
