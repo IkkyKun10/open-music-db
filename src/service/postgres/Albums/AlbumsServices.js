@@ -1,7 +1,8 @@
 const { Pool } = require("pg");
-const { nanoid } = require('nanoid');
+const { nanoid } = require('nanoid')
 const InvariantError = require("../../../exceptions/InvariantError");
 const NotFoundError = require("../../../exceptions/NotFoundError");
+const { mapAlbumToModel } = require("../../../utils");
 
 class AlbumsServices {
     constructor() {
@@ -9,19 +10,19 @@ class AlbumsServices {
     }
 
     async addAlbum({ name, year }) {
-        const albumId = nanoid(16)
+        const id = nanoid(16)
 
         const query = {
-            text: 'INSERT INTO albums VALUES($1, $2, $3) RETURNING albumId',
-            values: [albumId, name, year]
+            text: 'INSERT INTO albums VALUES($1, $2, $3) RETURNING id',
+            values: [id, name, year]
         }
 
         const result = await this._pool.query(query)
-        if (!result.rows[0].albumId) {
+        if (!result.rows[0].id) {
             throw new InvariantError('Album gagal ditambahkan')
         }
 
-        return result.rows[0].albumId
+        return result.rows[0].id
     }
 
     async getAlbums() {
@@ -29,24 +30,53 @@ class AlbumsServices {
         return result.rows
     }
 
-    async getAlbumById(albumId) {
-        const query = {
-            text: 'SELECT * FROM albums WHERE albumId = $1',
-            values: [albumId],
+    async getAlbumById(id) {
+        const firstQuery = {
+            text: `
+            SELECT albums.*, songs.id AS song_id, songs.title AS song_title, songs.performer AS song_performer
+            FROM albums INNER JOIN songs ON albums.id = songs.album_id
+            WHERE albums.id = $1
+            `,
+            values: [id],
         }
 
-        const result = await this._pool.query(query)
+        const firstResult = await this._pool.query(firstQuery)
 
-        if (!result.rows.length) {
+        if (!firstResult.rows.length) {
+            const secQuery = {
+                text: 'SELECT * FROM albums WHERE id = $1',
+                values: [id],
+            }
 
+            const secResult = await this._pool.query(secQuery)
+
+            if (!secResult.rows.length) {
+                throw new NotFoundError('Album tidak ditemukan')
+            }
+
+            return secResult.rows.map(mapAlbumToModel)[0]
         }
 
+        const { id: albumId, name, year } = firstResult.rows[0]
+
+        const songs = firstResult.rows.map((row) => ({
+            id: row.song_id,
+            title: row.song_title,
+            performer: row.song_performer,
+        }))
+
+        return {
+            id: albumId,
+            name,
+            year,
+            songs,
+        }
     }
 
-    async editAlbumById(albumId, { name, year }) {
+    async editAlbumById(id, { name, year }) {
         const query = {
-            text: 'UPDATE albums SET name = $1, year = $2 WHERE albumId = $3 RETURNING albumId',
-            values: [name, year, albumId],
+            text: 'UPDATE albums SET name = $1, year = $2 WHERE id = $3 RETURNING id',
+            values: [name, year, id],
         }
 
         const result = await this._pool.query(query)
@@ -56,10 +86,10 @@ class AlbumsServices {
         }
     }
 
-    async deleteAlbumById(albumId) {
+    async deleteAlbumById(id) {
         const query = {
-            text: 'DELETE * FROM albums WHERE albumId = $1 RETURNING albumId',
-            values: [albumId],
+            text: 'DELETE * FROM albums WHERE id = $1 RETURNING id',
+            values: [id],
         }
 
         const result = await this._pool.query(query)
