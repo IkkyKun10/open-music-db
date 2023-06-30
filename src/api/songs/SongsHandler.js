@@ -12,12 +12,14 @@ class SongsHandler {
     async postSongHandler(request, h) {
         this._validator.validateMusicPayload(request.payload, this._schema)
 
-        const song = await this._service.addSong(request.payload)
+        //const { title, year, performer, genre, duration } = request.payload
+
+        const idSong = await this._service.addSong(request.payload)
 
         const response = h.response({
             status: 'success',
             data: {
-                song
+                idSong,
             },
         })
 

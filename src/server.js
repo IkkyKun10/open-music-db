@@ -37,7 +37,7 @@ const init = async () => {
                 })
 
                 newResponse.code(response.statusCode)
-                console.log(newResponse)
+                //console.log(newResponse)
                 return newResponse
             }
 
@@ -50,7 +50,7 @@ const init = async () => {
                 message: 'Maaf, terjadi kesalahan pada server',
             })
             newResponse.code(500)
-            console.log(newResponse)
+            //console.log(newResponse)
             return newResponse
         }
 
