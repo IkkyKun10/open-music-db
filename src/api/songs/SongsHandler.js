@@ -14,12 +14,12 @@ class SongsHandler {
 
         //const { title, year, performer, genre, duration } = request.payload
 
-        const idSong = await this._service.addSong(request.payload)
+        const songId = await this._service.addSong(request.payload)
 
         const response = h.response({
             status: 'success',
             data: {
-                idSong,
+                songId,
             },
         })
 

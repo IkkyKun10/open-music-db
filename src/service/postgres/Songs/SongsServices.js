@@ -28,7 +28,11 @@ class SongsServices {
     async getSongs() {
         const result = await this._pool.query('SELECT * FROM songs')
         
-        return result.rows.map(mapSongDBToModel)
+        return result.rows.map(({ id, title, performer}) => ({
+            id,
+            title,
+            performer,
+        }))
     }
 
     async getSongById(id) {
@@ -48,7 +52,7 @@ class SongsServices {
     async editSongById(id, { title, year, performer, genre, duration, albumId }) {
         const query = {
             text:
-                'UPDATE songs SET title = $1, year = $2, performer = $3, genre = $4, duration = $5, albumId = $6 WHERE id = $7 RETURNING id',
+                'UPDATE songs SET title = $1, year = $2, performer = $3, genre = $4, duration = $5, album_id = $6 WHERE id = $7 RETURNING id',
             values: [title, year, performer, genre, duration, albumId, id],
         }
 
