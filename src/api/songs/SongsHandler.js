@@ -27,19 +27,21 @@ class SongsHandler {
         return response
     }
 
-    async getSongsHandler() {
-        const songs = await this._service.getSongs()
+    async getSongsHandler(request, h) {
+        const { title = null, performer = null } = request.query
 
-        return {
+        const songs = await this._service.getSongs({ title, performer })
+
+        return h.response({
             status: 'success',
             data: {
                 songs
             },
-        }
+        })
     }
 
     async getSongByIdHandler(request, h) {
-        const id = request.params
+        const { id } = request.params
 
         const song = await this._service.getSongById(id)
 
@@ -54,7 +56,7 @@ class SongsHandler {
     }
 
     async putSongByIdHandler(request, h) {
-        const id = request.params
+        const { id } = request.params
 
         this._validator.validateMusicPayload(request.payload, this._schema)
 
@@ -68,7 +70,7 @@ class SongsHandler {
     }
 
     async deleteSongByIdHandler(request, h) {
-        const id = request.params
+        const { id } = request.params
 
         await this._service.deleteSongById(id)
 
