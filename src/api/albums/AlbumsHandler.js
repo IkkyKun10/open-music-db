@@ -10,7 +10,7 @@ class AlbumsHandler {
     }
 
     async postAlbumHandler(request, h) {
-        this._validator.validateMusicPayload(request, this._schema)
+        this._validator.validateMusicPayload(request.payload, this._schema)
 
         const { name = 'untitle album', year } = request.payload
 
