@@ -37,6 +37,7 @@ const init = async () => {
                 })
 
                 newResponse.code(response.statusCode)
+                console.log(newResponse)
                 return newResponse
             }
 
@@ -49,6 +50,7 @@ const init = async () => {
                 message: 'Maaf, terjadi kesalahan pada server',
             })
             newResponse.code(500)
+            console.log(newResponse)
             return newResponse
         }
 
@@ -58,7 +60,7 @@ const init = async () => {
     await server.register([
         {
             plugin: album,
-            option: {
+            options: {
                 service: albumsService,
                 validator: AlbumSongValidator,
                 schema: AlbumPayloadSchema,
@@ -66,7 +68,7 @@ const init = async () => {
         },
         {
             plugin: song,
-            option: {
+            options: {
                 service: songsServices,
                 validator: AlbumSongValidator,
                 schema: SongPayloadSchema,
