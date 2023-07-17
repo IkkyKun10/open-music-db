@@ -1,6 +1,4 @@
-/* eslint-disable camelcase */
 
-exports.shorthands = undefined;
 
 exports.up = (pgm) => {
     pgm.createTable('songs', {
@@ -26,7 +24,6 @@ exports.up = (pgm) => {
         },
         duration: {
             type: 'INTEGER',
-            notNull: false,
         },
         album_id: {
             type: 'VARCHAR(50)',

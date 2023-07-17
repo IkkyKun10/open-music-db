@@ -1,8 +1,9 @@
 const autoBind = require("auto-bind")
 
 class AlbumsHandler {
-    constructor(service, validator, schema) {
-        this._service = service
+    constructor(albumsService, songsService, validator, schema) {
+        this._albumsService = albumsService
+        this._songsService = songsService
         this._validator = validator
         this._schema = schema
 
@@ -14,7 +15,7 @@ class AlbumsHandler {
 
         const { name = 'untitle album', year } = request.payload
 
-        const albumId = await this._service.addAlbum({ name, year })
+        const albumId = await this._albumsService.addAlbum({ name, year })
 
         const response = h.response({
             status: 'success',
@@ -29,27 +30,30 @@ class AlbumsHandler {
     }
 
     async getAlbumsHandler() {
-        const albums = await this._service.getAlbums()
+        const albums = await this._albumsService.getAlbums()
 
         return {
             status: 'success',
-            data: albums,
+            data: {
+                albums,
+            },
         }
     }
 
     async getAlbumByIdHandler(request, h) {
         const { id } = request.params
 
-        const album = await this._service.getAlbumById(id)
+        const album = await this._albumsService.getAlbumById(id)
+        //const songs = await this._songsService.getSongsInAlbum(id)
 
         const response = h.response({
             status: 'success',
             data: {
-                album
+                album,
             },
-        })
+        });
 
-        return response
+        return response;
     }
 
     async putAlbumByIdHandler(request, h) {
@@ -57,7 +61,7 @@ class AlbumsHandler {
 
         this._validator.validateMusicPayload(request.payload, this._schema)
 
-        await this._service.editAlbumById(id, request.payload)
+        await this._albumsService.editAlbumById(id, request.payload)
 
         return h.response({
             status: 'success',
@@ -68,7 +72,7 @@ class AlbumsHandler {
     async deleteAlbumByIdHandler(request, h) {
         const { id } = request.params
 
-        await this._service.deleteAlbumById(id)
+        await this._albumsService.deleteAlbumById(id)
 
         return h.response({
             status: 'success',

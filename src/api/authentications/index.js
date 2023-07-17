@@ -9,12 +9,14 @@ module.exports = {
         usersService,
         tokenManager,
         validator,
+        schema,
     }) => {
         const authenticationsHandler = new AuthenticationsHandler(
             authenticationsService,
             usersService,
             tokenManager,
             validator,
+            schema,
         );
         server.route(routes(authenticationsHandler));
     },

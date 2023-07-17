@@ -5,16 +5,52 @@ const { AlbumsServices } = require("./service/postgres/Albums/AlbumsServices")
 const { SongsServices } = require("./service/postgres/Songs/SongsServices")
 
 const Hapi = require('@hapi/hapi')
+const Jwt = require('@hapi/jwt');
 
-const album = require('./api/albums')
-const song = require('./api/songs');
 const { AlbumSongValidator } = require('./validator');
 const { AlbumPayloadSchema } = require('./validator/albums/AlbumSchema');
 const { SongPayloadSchema } = require('./validator/songs/Songschema');
+const AuthenticationsService = require('./service/postgres/auth/AuthenticationsService');
+const authentications = require('./api/authentications');
+const UsersServices = require('./service/postgres/users/UsersServices');
+const TokenManager = require('./service/tokenize/TokenManager');
+
+const { 
+    PostAuthenticationPayloadSchema, 
+    PutAuthenticationPayloadSchema, 
+    DeleteAuthenticationPayloadSchema 
+} = require("./validator/authentications/schema")
+
+//plugin
+const album = require('./api/albums')
+const song = require('./api/songs');
+const users = require('./api/users')
+const playlists = require('./api/playlists')
+const playlistActivities = require('./api/activities')
+const collaborations = require('./api/collab');
+
+const { UserPayloadSchema } = require('./validator/users/schema');
+const CollaborationsService = require('./service/postgres/collaborations/CollaborationsServices');
+const PlaylistsService = require('./service/postgres/playlists/PlaylistsService');
+const PlaylistActivitiesService = require('./service/postgres/playlists/PlaylistActivitiesService');
+
+const { 
+    PostPlaylistPayloadSchema,
+    PostSongToPlaylistPayloadSchema,
+    DeleteSongFromPlaylistPayloadSchema
+} = require('./validator/playlists/schema');
+
+const CollaborationPayloadSchema = require('./validator/collaborations/schema');
 
 const init = async () => {
     const albumsService = new AlbumsServices()
     const songsServices = new SongsServices()
+    const authenticationsService = new AuthenticationsService()
+    const usersService = new UsersServices()
+    const collaborationsService = new CollaborationsService()
+    const playlistsService = new PlaylistsService(collaborationsService)
+    const playlistActivitiesService = new PlaylistActivitiesService()
+
 
     const server = Hapi.server({
         port: process.env.PORT,
@@ -37,7 +73,7 @@ const init = async () => {
                 })
 
                 newResponse.code(response.statusCode)
-                //console.log(newResponse)
+                
                 return newResponse
             }
 
@@ -49,19 +85,47 @@ const init = async () => {
                 status: 'error',
                 message: 'Maaf, terjadi kesalahan pada server',
             })
+
+            console.error(response.message)
+
             newResponse.code(500)
-            //console.log(newResponse)
+            
             return newResponse
         }
 
         return h.continue
     })
 
+    // registrasi plugin eksternal
+    await server.register([
+        {
+            plugin: Jwt,
+        },
+    ]);
+
+    // mendefinisikan strategy autentikasi jwt
+    server.auth.strategy('albumsongapp_jwt', 'jwt', {
+        keys: process.env.ACCESS_TOKEN_KEY,
+        verify: {
+            aud: false,
+            iss: false,
+            sub: false,
+            maxAgeSec: process.env.ACCESS_TOKEN_AGE,
+        },
+        validate: (artifacts) => ({
+            isValid: true,
+            credentials: {
+                id: artifacts.decoded.payload.id,
+            },
+        }),
+    });
+
     await server.register([
         {
             plugin: album,
             options: {
-                service: albumsService,
+                albumsService,
+                songsServices,
                 validator: AlbumSongValidator,
                 schema: AlbumPayloadSchema,
             },
@@ -72,6 +136,59 @@ const init = async () => {
                 service: songsServices,
                 validator: AlbumSongValidator,
                 schema: SongPayloadSchema,
+            },
+        },
+        {
+            plugin: authentications,
+            options: {
+                authenticationsService,
+                usersService,
+                tokenManager: TokenManager,
+                validator: AlbumSongValidator,
+                schema: {
+                    PostAuthenticationPayloadSchema,
+                    PutAuthenticationPayloadSchema,
+                    DeleteAuthenticationPayloadSchema,
+                },
+            },
+        },
+        {
+            plugin: users,
+            options: {
+                service: usersService,
+                validator: AlbumSongValidator,
+                schema: UserPayloadSchema,
+            },
+        },
+        {
+            plugin: playlists,
+            options: {
+                playlistsService,
+                songsServices,
+                playlistActivitiesService,
+                validator: AlbumSongValidator,
+                schema: {
+                    PostPlaylistPayloadSchema,
+                    PostSongToPlaylistPayloadSchema,
+                    DeleteSongFromPlaylistPayloadSchema,
+                },
+            },
+        },
+        {
+            plugin: playlistActivities,
+            options: {
+                playlistsService,
+                playlistActivitiesService,
+            },
+        },
+        {
+            plugin: collaborations,
+            options: {
+                collaborationsService,
+                usersService,
+                playlistsService,
+                validator: AlbumSongValidator,
+                schema: CollaborationPayloadSchema,
             },
         },
     ])
