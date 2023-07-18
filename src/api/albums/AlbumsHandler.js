@@ -1,84 +1,84 @@
-const autoBind = require("auto-bind")
+const autoBind = require('auto-bind')
 
 class AlbumsHandler {
-    constructor(albumsService, songsService, validator, schema) {
-        this._albumsService = albumsService
-        this._songsService = songsService
-        this._validator = validator
-        this._schema = schema
+  constructor (albumsService, songsService, validator, schema) {
+    this._albumsService = albumsService
+    this._songsService = songsService
+    this._validator = validator
+    this._schema = schema
 
-        autoBind(this)
+    autoBind(this)
+  }
+
+  async postAlbumHandler (request, h) {
+    this._validator.validateMusicPayload(request.payload, this._schema)
+
+    const { name = 'untitle album', year } = request.payload
+
+    const albumId = await this._albumsService.addAlbum({ name, year })
+
+    const response = h.response({
+      status: 'success',
+      message: 'Album berhasil ditambahkan',
+      data: {
+        albumId
+      }
+    })
+
+    response.code(201)
+    return response
+  }
+
+  async getAlbumsHandler () {
+    const albums = await this._albumsService.getAlbums()
+
+    return {
+      status: 'success',
+      data: {
+        albums
+      }
     }
+  }
 
-    async postAlbumHandler(request, h) {
-        this._validator.validateMusicPayload(request.payload, this._schema)
+  async getAlbumByIdHandler (request, h) {
+    const { id } = request.params
 
-        const { name = 'untitle album', year } = request.payload
+    const album = await this._albumsService.getAlbumById(id)
+    // const songs = await this._songsService.getSongsInAlbum(id)
 
-        const albumId = await this._albumsService.addAlbum({ name, year })
+    const response = h.response({
+      status: 'success',
+      data: {
+        album
+      }
+    })
 
-        const response = h.response({
-            status: 'success',
-            message: 'Album berhasil ditambahkan',
-            data: {
-                albumId
-            },
-        })
+    return response
+  }
 
-        response.code(201)
-        return response
-    }
+  async putAlbumByIdHandler (request, h) {
+    const { id } = request.params
 
-    async getAlbumsHandler() {
-        const albums = await this._albumsService.getAlbums()
+    this._validator.validateMusicPayload(request.payload, this._schema)
 
-        return {
-            status: 'success',
-            data: {
-                albums,
-            },
-        }
-    }
+    await this._albumsService.editAlbumById(id, request.payload)
 
-    async getAlbumByIdHandler(request, h) {
-        const { id } = request.params
+    return h.response({
+      status: 'success',
+      message: 'Album berhasil diperbaharui'
+    })
+  }
 
-        const album = await this._albumsService.getAlbumById(id)
-        //const songs = await this._songsService.getSongsInAlbum(id)
+  async deleteAlbumByIdHandler (request, h) {
+    const { id } = request.params
 
-        const response = h.response({
-            status: 'success',
-            data: {
-                album,
-            },
-        });
+    await this._albumsService.deleteAlbumById(id)
 
-        return response;
-    }
-
-    async putAlbumByIdHandler(request, h) {
-        const { id } = request.params
-
-        this._validator.validateMusicPayload(request.payload, this._schema)
-
-        await this._albumsService.editAlbumById(id, request.payload)
-
-        return h.response({
-            status: 'success',
-            message: 'Album berhasil diperbaharui',
-        })
-    }
-
-    async deleteAlbumByIdHandler(request, h) {
-        const { id } = request.params
-
-        await this._albumsService.deleteAlbumById(id)
-
-        return h.response({
-            status: 'success',
-            message: 'Album berhasil dihapus',
-        })
-    }
+    return h.response({
+      status: 'success',
+      message: 'Album berhasil dihapus'
+    })
+  }
 }
 
 module.exports = { AlbumsHandler }

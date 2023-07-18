@@ -1,84 +1,81 @@
-const autoBind = require("auto-bind")
+const autoBind = require('auto-bind')
 
 class SongsHandler {
-    constructor(service, validator, schema) {
-        this._service = service
-        this._validator = validator
-        this._schema = schema
+  constructor (service, validator, schema) {
+    this._service = service
+    this._validator = validator
+    this._schema = schema
 
-        autoBind(this)
-    }
+    autoBind(this)
+  }
 
-    async postSongHandler(request, h) {
-        this._validator.validateMusicPayload(request.payload, this._schema)
+  async postSongHandler (request, h) {
+    this._validator.validateMusicPayload(request.payload, this._schema)
 
-        //const { title, year, performer, genre, duration } = request.payload
+    const songId = await this._service.addSong(request.payload)
 
-        const songId = await this._service.addSong(request.payload)
+    const response = h.response({
+      status: 'success',
+      data: {
+        songId
+      }
+    })
 
-        const response = h.response({
-            status: 'success',
-            data: {
-                songId,
-            },
-        })
+    response.code(201)
+    return response
+  }
 
-        response.code(201)
-        return response
-    }
+  async getSongsHandler (request, h) {
+    const { title = null, performer = null } = request.query
 
-    async getSongsHandler(request, h) {
-        const { title = null, performer = null } = request.query
+    const songs = await this._service.getSongs({ title, performer })
 
-        const songs = await this._service.getSongs({ title, performer })
+    return h.response({
+      status: 'success',
+      data: {
+        songs
+      }
+    })
+  }
 
-        return h.response({
-            status: 'success',
-            data: {
-                songs
-            },
-        })
-    }
+  async getSongByIdHandler (request, h) {
+    const { id } = request.params
 
-    async getSongByIdHandler(request, h) {
-        const { id } = request.params
+    const song = await this._service.getSongById(id)
 
-        const song = await this._service.getSongById(id)
+    const response = h.response({
+      status: 'success',
+      data: {
+        song
+      }
+    })
 
-        const response = h.response({
-            status: 'success',
-            data: {
-                song
-            },
-        })
+    return response
+  }
 
-        return response
-    }
+  async putSongByIdHandler (request, h) {
+    const { id } = request.params
 
-    async putSongByIdHandler(request, h) {
-        const { id } = request.params
+    this._validator.validateMusicPayload(request.payload, this._schema)
 
-        this._validator.validateMusicPayload(request.payload, this._schema)
+    await this._service.editSongById(id, request.payload)
 
-        await this._service.editSongById(id, request.payload)
+    return h.response({
+      status: 'success',
+      message: 'Lagu berhasil diperbaharui'
+    })
+  }
 
-        return h.response({
-            status: 'success',
-            message: 'Lagu berhasil diperbaharui',
-        })
+  async deleteSongByIdHandler (request, h) {
+    const { id } = request.params
 
-    }
+    await this._service.deleteSongById(id)
 
-    async deleteSongByIdHandler(request, h) {
-        const { id } = request.params
-
-        await this._service.deleteSongById(id)
-
-        return h.response({
-            status: 'success',
-            message: 'Lagu berhasil dihapus',
-        })
-    }
+    return h.response({
+      status: 'success',
+      message: 'Lagu berhasil dihapus'
+    })
+  }
 }
 
 module.exports = { SongsHandler }

@@ -12,7 +12,8 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "nodemon": "^1.14.9"
+    "nodemon": "^1.14.9",
+    "standard": "^17.1.0"
   },
   "dependencies": {
     "@hapi/hapi": "^20.1.0",
