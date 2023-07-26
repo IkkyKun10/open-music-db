@@ -3,10 +3,14 @@ const InvariantError = require('../../../exceptions/InvariantError')
 const NotFoundError = require('../../../exceptions/NotFoundError')
 
 const { nanoid } = require('nanoid')
+const { mapSongDBToModel } = require('../../../utils')
 
 class SongsServices {
-  constructor () {
+  constructor (cacheService) {
     this._pool = new Pool()
+    this._cacheService = cacheService
+
+    this._key = 'cache-songs'
   }
 
   async addSong ({ title, year, performer, genre, duration, albumId }) {
@@ -63,7 +67,7 @@ class SongsServices {
       throw new NotFoundError('Lagu tidak ditemukan, Id tidak ditemukan')
     }
 
-    return result.rows[0]
+    return result.rows.map(mapSongDBToModel)[0]
   }
 
   async getSongsInAlbum (albumId) {
@@ -102,6 +106,8 @@ class SongsServices {
     if (!result.rowCount) {
       throw new NotFoundError('Gagal menghapus lagu, id tidak ditemukan')
     }
+
+    await this._cacheService.delete(this._key)
   }
 }
 

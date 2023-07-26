@@ -58,14 +58,14 @@ const CacheService = require('./service/postgres/redis/CacheService')
 const AlbumLikesService = require('./service/postgres/likes/AlbumLikesService')
 
 const init = async () => {
+  const cacheService = new CacheService()
   const albumsService = new AlbumsServices()
-  const songsServices = new SongsServices()
+  const songsServices = new SongsServices(cacheService)
   const authenticationsService = new AuthenticationsService()
   const usersService = new UsersServices()
   const collaborationsService = new CollaborationsService()
-  const playlistsService = new PlaylistsService(collaborationsService)
+  const playlistsService = new PlaylistsService(collaborationsService, cacheService)
   const playlistActivitiesService = new PlaylistActivitiesService()
-  const cacheService = new CacheService()
   const storageService = new StorageService(
     path.resolve(__dirname, './api/uploads/assets/images')
   )
