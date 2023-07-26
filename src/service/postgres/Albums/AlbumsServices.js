@@ -42,7 +42,7 @@ class AlbumsServices {
 
     const firstResult = await this._pool.query(firstQuery)
 
-    if (!firstResult.rows.length) {
+    if (!firstResult.rowCount) {
       const secQuery = {
         text: 'SELECT * FROM albums WHERE id = $1',
         values: [id]
@@ -65,10 +65,15 @@ class AlbumsServices {
       performer: row.song_performer
     }))
 
+    const coverUrl = firstResult.rows.map((row) => ({
+      coverUrl: row.cover_url
+    }))[0]
+
     return {
       id: albumId,
       name,
       year,
+      coverUrl,
       songs
     }
 
@@ -86,10 +91,10 @@ class AlbumsServices {
     // return result.rows[0];
   }
 
-  async editAlbumById (id, { name, year }) {
+  async editAlbumById (id, { name, year, coverUrl }) {
     const query = {
-      text: 'UPDATE albums SET name = $1, year = $2 WHERE id = $3 RETURNING id',
-      values: [name, year, id]
+      text: 'UPDATE albums SET name = $1, year = $2, cover_url = $3 WHERE id = $4 RETURNING id',
+      values: [name, year, coverUrl, id]
     }
 
     const result = await this._pool.query(query)

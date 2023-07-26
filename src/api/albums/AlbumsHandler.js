@@ -1,9 +1,9 @@
 const autoBind = require('auto-bind')
 
 class AlbumsHandler {
-  constructor (albumsService, songsService, validator, schema) {
+  constructor (albumsService, songsServices, validator, schema) {
     this._albumsService = albumsService
-    this._songsService = songsService
+    this._songsService = songsServices
     this._validator = validator
     this._schema = schema
 

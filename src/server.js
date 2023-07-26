@@ -1,11 +1,14 @@
 require('dotenv').config()
 
+const Inert = require('@hapi/inert')
+const path = require('path')
 const ClientError = require('./exceptions/ClientError')
 const { AlbumsServices } = require('./service/postgres/Albums/AlbumsServices')
 const { SongsServices } = require('./service/postgres/Songs/SongsServices')
 
 const Hapi = require('@hapi/hapi')
 const Jwt = require('@hapi/jwt')
+const config = require('./utils/config')
 
 const { AlbumSongValidator } = require('./validator')
 const { AlbumPayloadSchema } = require('./validator/albums/AlbumSchema')
@@ -42,6 +45,18 @@ const {
 
 const CollaborationPayloadSchema = require('./validator/collaborations/schema')
 
+const _exports = require('./api/exports')
+const ExportSongsFromPlaylistSchema = require('./validator/exports/schema')
+const producerService = require('./service/postgres/rabbitmq/ProducerService')
+
+const uploads = require('./api/uploads')
+const StorageService = require('./service/postgres/storage/StorageService')
+const ImageHeadersSchema = require('./validator/uploads/schema')
+
+const likeAlbum = require('./api/likes')
+const CacheService = require('./service/postgres/redis/CacheService')
+const AlbumLikesService = require('./service/postgres/likes/AlbumLikesService')
+
 const init = async () => {
   const albumsService = new AlbumsServices()
   const songsServices = new SongsServices()
@@ -50,10 +65,15 @@ const init = async () => {
   const collaborationsService = new CollaborationsService()
   const playlistsService = new PlaylistsService(collaborationsService)
   const playlistActivitiesService = new PlaylistActivitiesService()
+  const cacheService = new CacheService()
+  const storageService = new StorageService(
+    path.resolve(__dirname, './api/uploads/assets/images')
+  )
+  const albumLikesService = new AlbumLikesService(cacheService)
 
   const server = Hapi.server({
-    port: process.env.PORT,
-    host: process.env.HOST,
+    port: config.app.port,
+    host: config.app.host,
     routes: {
       cors: {
         origin: ['*']
@@ -70,6 +90,8 @@ const init = async () => {
           status: 'fail',
           message: response.message
         })
+
+        console.error(response.message)
 
         newResponse.code(response.statusCode)
 
@@ -99,6 +121,9 @@ const init = async () => {
   await server.register([
     {
       plugin: Jwt
+    },
+    {
+      plugin: Inert
     }
   ])
 
@@ -188,6 +213,31 @@ const init = async () => {
         playlistsService,
         validator: AlbumSongValidator,
         schema: CollaborationPayloadSchema
+      }
+    },
+    {
+      plugin: likeAlbum,
+      options: {
+        albumLikesService,
+        albumsService
+      }
+    },
+    {
+      plugin: _exports,
+      options: {
+        producerService,
+        playlistsService,
+        validator: AlbumSongValidator,
+        schema: ExportSongsFromPlaylistSchema
+      }
+    },
+    {
+      plugin: uploads,
+      options: {
+        storageService,
+        albumsService,
+        validator: AlbumSongValidator,
+        schema: ImageHeadersSchema
       }
     }
   ])

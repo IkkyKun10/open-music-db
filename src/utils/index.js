@@ -1,3 +1,5 @@
+/* eslint-disable camelcase */
+
 const mapSongDBToModel = ({
   id,
   title,
@@ -5,7 +7,7 @@ const mapSongDBToModel = ({
   performer,
   genre,
   duration,
-  album_id //eslint-disable-line
+  album_id
 
 }) => ({
   id,
@@ -14,17 +16,19 @@ const mapSongDBToModel = ({
   performer,
   genre,
   duration,
-  albumId: album_id //eslint-disable-line
+  albumId: album_id
 })
 
 const mapAlbumToModel = ({
   id: _id,
   name,
-  year
+  year,
+  cover_url
 }) => ({
   id: _id,
   name,
   year,
+  coverUrl: cover_url,
   songs: []
 })
 
